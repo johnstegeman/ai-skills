@@ -1,33 +1,64 @@
 ---
 name: jujutsu
-description: Use this skill for any git/vcs operations (commit, fetch, clone, push, diff, log, etc) - ESPECIALLY if git HEAD is detached. If a .jj directory exists, this is a jujutsu repository, and git commands could corrupt the repository. This skill includes essential safety instructions for working with git. **DO NOT IGNORE**
+description: Use this skill for any version control operations (commit, log, diff, push, fetch, bookmark, workspace, rebase, undo, etc.). If a `.jj` directory exists, the repo is jujutsu and git mutations will corrupt it — use `jj` for all mutations; read-only `git log/diff/show/blame/grep` are allowed. Covers co-located repos, multi-agent parallel workspaces, and operation-log recovery. **DO NOT IGNORE**
 allowed-tools: Bash(jj *)
 license: Apache-2.0
 metadata:
   author: johnstegeman
-  version: "1.0"
+  version: "1.1"
 ---
 
 # Jujutsu (jj) Version Control System
 
 This skill helps you work with Jujutsu, a Git-compatible VCS with mutable commits and automatic rebasing.
 
-**Tested with jj v0.39.0** - Commands may differ in other versions.
+**Tested with jj v0.41.0** - Commands may differ in other versions.
 
-## Important - discovering when to use jujutsu vs git
+<!--
+Attribution and inspiration sources:
 
-If the "jj" program is installed, you can run this in order to determine whether a directory is part of a jujutsu repository:
+- Forked from danverbraganza/jujutsu-skill (https://skills.sh/danverbraganza/jujutsu-skill/jujutsu).
+  The original scaffolding, references/ structure, and core mental-model wording are from there.
+
+- Enforcement language in "Critical: never use git for mutations" was tightened using the
+  read-only-git allowlist pattern from knoopx/pi@jujutsu
+  (https://skills.sh/knoopx/pi/jujutsu).
+
+- "Parallel Workspaces" framing as a tool for multi-agent isolation draws on
+  onevcat/skills@onevcat-jj (https://skills.sh/onevcat/skills/onevcat-jj),
+  which is explicitly subtitled "Version Control for Agent Workflows".
+
+- The .workspaces/ project-local directory convention, the .gitignore safety check,
+  and the directory-selection priority documented in references/WORKSPACES.md
+  come from edmundmiller/dotfiles using-jj-workspaces
+  (https://lobehub.com/skills/edmundmiller-dotfiles-using-jj-workspaces).
+
+- The "op log records every mutation; nothing is ever truly lost" framing in the
+  Recovery section is adapted from trevors/dot-claude@jj-workflow
+  (https://skills.sh/trevors/dot-claude/jj-workflow).
+-->
+
+
+## Detecting a jj repo
+
+Check whether a directory is part of a jj repo:
 
 ```bash
 jj root
 ```
 
-If the command returns a path, the repo is managed by jujutsu
-If the command returns an error ("Error: There is no jj repo in <directory>") then it is not
+If it returns a path, the repo is jj-managed. If it returns `Error: There is no jj repo in <directory>`, it isn't. The presence of a `.jj/` folder is another giveaway. If the repo is not a jj one, do not further use this skill.
 
-Another tell-tale sign of a jujutsu repository is the presence of a .jj folder.
+<!-- Enforcement wording (allowed/forbidden split with read-only git allowlist) adapted from knoopx/pi@jujutsu. -->
+## Critical: never use git for mutations in a jj repo
 
-If the repository is a jj one, do NOT use git commands, as they are unsafe in jj repos. If the repo is not a jj one, do not further use this skill.
+In a jj repo (including co-located repos that also have `.git/`):
+
+- **Forbidden** (corrupts jj state): `git commit`, `git add`, `git stash`, `git reset`, `git checkout <branch>`, `git switch`, `git rebase`, `git merge`, `git cherry-pick`, `git push`, `git pull`.
+- **Allowed** (read-only): `git log`, `git show`, `git diff`, `git blame`, `git grep`, `git status`. Prefer the `jj` equivalents (`jj log`, `jj show`, `jj diff`, etc.) but read-only git commands won't break anything.
+- **Use jj instead**: `jj git push`, `jj git fetch`, `jj edit <change>` (not `git checkout`), `jj rebase`, `jj new <a> <b>` (for merges).
+
+See `references/COLOCATED.md` for the full co-located repo workflow.
 
 ## Important: Automated/Agent Environment
 
@@ -96,6 +127,8 @@ jj desc -m "feat: Add user authentication to login endpoint"
 jj st
 ```
 
+For the full starting-a-change workflow (when to reuse `@` vs `jj new`, anti-patterns, decision logic), see `references/NEW_CHANGE.md`.
+
 ### Creating Atomic Commits
 
 Each commit should represent ONE logical change.
@@ -157,61 +190,71 @@ jj bookmark list
 jj bookmark delete my-feature
 ```
 
+<!--
+Multi-agent workspace framing inspired by onevcat/skills@onevcat-jj.
+The .workspaces/ project-local convention codified in references/WORKSPACES.md
+is adapted from edmundmiller/dotfiles using-jj-workspaces.
+-->
+## Parallel Workspaces
+
+For running multiple agents in parallel against the same repo without working-copy collisions, use `jj workspace`. Each workspace gets its own `@` while sharing the underlying repo store.
+
+```bash
+# Quick reference (full convention in references/WORKSPACES.md)
+jj workspace add .workspaces/<repo>-<purpose>   # Create
+jj workspace list                                # List
+jj workspace forget <name>                       # Untrack (files stay on disk)
+```
+
+See `references/WORKSPACES.md` for the full convention: the `.workspaces/` directory layout, `.gitignore` safety check, naming, environment bootstrapping, and merging results from multiple workspaces back together.
+
 ## Working with tags
 
 jujutsu does not yet support tags and pushing them to a remote. If you need to tag (such as for a release), you will need to use git to create and push the tags.
 
-## Git Integration
+## Git Integration (Co-located Repos)
 
-### Working with Existing Git Repos
-Always use colocated repositories
+Always use co-located repos when working with existing git projects. They give you jj locally while keeping the repo remote-compatible with git tooling.
+
 ```bash
-# Clone a git repository
-jj git clone <url> --colocate
-
-# Initialize jj in an existing git repo
-jj git init --colocate
+jj git clone <url> --colocate           # Clone a git repo
+jj git init --colocate                  # Adopt an existing git repo
 ```
 
-### Switching Between jj and git (Colocated Repos)
-
-In a colocated repository (where both `.jj/` and `.git/` exist), you can use both jj and git commands. However, there are important considerations:
-
-**Switching to git mode** (e.g., for merge workflows):
-```bash
-# First, ensure your jj working copy is clean
-jj st
-
-# Then checkout a branch with git
-git checkout <branch-name>
-```
-
-**Switching back to jj mode**:
-```bash
-# Use jj edit to resume working with jj
-jj edit <change-id>
-```
-
-**Important notes:**
-- Git may complain about uncommitted changes if jj's working copy differs from the git HEAD
-- ALWAYS ensure your work is committed in jj before switching to git
-- After git operations, jj will detect and incorporate the changes on next command
-
+See `references/COLOCATED.md` for the complete workflow: the mutation rule (`git` is forbidden for mutations, allowed read-only), the git-command allowlist, common gotchas, and switching modes when absolutely necessary.
 
 ### Pushing Changes
 
-If you need to push changes to a remote, see (Pushing changes)[references/PUSH.md]
+For pushing bookmarks to a remote, see `references/PUSH.md`. For named remotes, fork+upstream setups, and other multi-remote workflows, see `references/REMOTES.md`.
 
 ## Handling Conflicts
 
-jj allows committing conflicts — you can resolve them later:
+jj treats conflicts as first-class objects — a commit can contain a conflict, and that conflict persists through rebases until resolved. `jj` refuses to push conflicted commits, so they must be resolved before `jj git push`.
 
 ```bash
-# View conflicts
-jj st
+jj st                                # Reports if @ has unresolved conflicts
+jj resolve --list                    # Lists conflicted paths
+jj resolve --tool :ours              # Take side #1 non-interactively (agent-safe)
+jj resolve --tool :theirs            # Take side #2 non-interactively (agent-safe)
 ```
 
-**Agent conflict resolution**: Do not use `jj resolve` (interactive). Instead, edit the conflicted files directly to remove conflict markers, then run `jj st` to verify resolution.
+**Never run bare `jj resolve` (no `--tool`)** — it's interactive and will hang in non-interactive agent environments. Either pass `--tool :ours` / `--tool :theirs`, or edit conflict markers directly in the file and let `jj st` snapshot the resolution.
+
+See `references/CONFLICTS.md` for the full resolution playbook: marker formats (diff vs snapshot), five resolution paths, ancestor-level resolution to avoid re-resolving across descendants, verification (beyond `jj st`), and anti-patterns.
+
+<!-- Recovery framing ("op log records every mutation; nothing is ever lost") adapted from trevors/dot-claude@jj-workflow. -->
+## Recovery and the Operation Log
+
+The op log records every mutation. Nothing is ever lost.
+
+```bash
+jj undo                  # Reverse the last operation (primary recovery tool)
+jj op log                # See all operations
+jj op restore <op-id>    # Jump back to any past state
+jj evolog -r <change>    # See how a specific change evolved
+```
+
+**Always reach for `jj undo` first** when something looks wrong — it's always correct and safe. See `references/RECOVERY.md` for recovery patterns by scenario (bad squash, accidental abandon, lost work, etc.).
 
 ## Preserving Commit Quality
 
@@ -240,6 +283,12 @@ jj st
 | Restore files | `jj restore [paths]` |
 | Create bookmark | `jj bookmark create <name>` |
 | Push bookmark | `jj git push -b <name>` |
+| Add workspace | `jj workspace add .workspaces/<repo>-<purpose>` |
+| List workspaces | `jj workspace list` |
+| Forget workspace | `jj workspace forget <name>` |
+| See operation log | `jj op log` |
+| Jump to past state | `jj op restore <op-id>` |
+| See change evolution | `jj evolog -r <id>` |
 
 ## Best Practices Summary
 
@@ -247,4 +296,6 @@ jj st
 2. **One change per commit**: Keep commits atomic and focused
 3. **Use change IDs**: They're stable across rewrites
 4. **Refine commits**: Leverage mutability for clean history
-5. **Embrace the workflow**: No staging area, no stashing - just commits
+5. **Embrace the workflow**: No staging area, no stashing — the op log replaces both
+6. **Workspaces for parallel agents**: Isolate concurrent agent work in `.workspaces/<repo>-<purpose>` (see `references/WORKSPACES.md`)
+7. **`jj undo` first**: When something looks wrong, undo before fixing manually (see `references/RECOVERY.md`)

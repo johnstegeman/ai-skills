@@ -34,3 +34,5 @@ jj bookmark create my-feature
 # Then push it
 jj git push -b my-feature
 ```
+
+For named remotes, multi-remote setups (e.g. fork + upstream), tracking remote bookmarks, and one-time configuration for the two canonical multi-remote workflows, see `references/REMOTES.md`.

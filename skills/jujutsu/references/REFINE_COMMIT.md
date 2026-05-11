@@ -1,13 +1,35 @@
 ### Squashing Changes
 
-Move changes from current commit into its parent:
+`jj squash` moves changes from one revision to another. The default is `@` → its parent; pass `--into` to target any other change.
 
 ```bash
-# Squash all changes into parent
+# Default: squash @ into its parent
 jj squash
+
+# Squash @ into a specific change (not the parent)
+jj squash --into <change-id>
+jj squash -t <change-id>                  # short form
+
+# Squash a non-@ change into its parent
+jj squash -r <change-id>
+
+# Full explicit form: any source, any destination
+jj squash --from <source-id> --into <destination-id>
+
+# Squash only specific paths (the rest stay in the source)
+jj squash path/to/file.txt
+jj squash --into <change-id> src/auth/
 ```
 
-**Note**: `jj squash -i` opens an interactive UI and will hang in agent environments. Avoid it.
+**Combined description prompt**: if both source and destination have non-empty descriptions, `jj squash` opens an editor to pick a combined description — and hangs in agent environments. Always pass `-m` inline when squashing two described commits together:
+
+```bash
+jj squash --into <change-id> -m "feat: Combine auth changes"
+```
+
+**Empty source**: when squashing leaves the source revision empty (no content vs. its parent), jj abandons it by default. Pass `--keep-emptied` to keep an empty placeholder instead.
+
+**Interactive forms to avoid**: `jj squash -i` / `jj squash --interactive` open a TUI and will hang in agent environments. Use `--from` / `--into` / paths instead.
 
 ### Splitting Commits
 
