@@ -68,8 +68,8 @@ When running as an agent or running on behalf of the user:
 
 ```bash
 # Always use -m to avoid editor prompts
-jj desc -m "message"      # NOT: jj desc
-jj squash -m "message"    # NOT: jj squash (which opens editor)
+jj desc -m "message"               # NOT: jj desc
+jj squash --into @- -m "message"   # NOT: jj squash (which opens editor or prompts for hunks)
 ```
 
 Editor-based commands will fail in non-interactive environments.
@@ -276,7 +276,7 @@ jj evolog -r <change>    # See how a specific change evolved
 | View diff | `jj diff` |
 | New commit | `jj st` then `jj new` only if `@` has changes, then `jj desc -m "message"` |
 | Edit commit | `jj edit <id>` |
-| Squash to parent | `jj squash` |
+| Squash to parent | `jj squash --into @- -m "message"` |
 | Auto-distribute | `jj absorb` |
 | Abandon commit | `jj abandon <id>` |
 | Undo last operation | `jj undo` |
