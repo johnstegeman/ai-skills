@@ -5,7 +5,7 @@ allowed-tools: Bash(jj *)
 license: Apache-2.0
 metadata:
   author: johnstegeman
-  version: "1.1"
+version: "1.2"
 ---
 
 # Jujutsu (jj) Version Control System
@@ -13,6 +13,8 @@ metadata:
 This skill helps you work with Jujutsu, a Git-compatible VCS with mutable commits and automatic rebasing.
 
 **Tested with jj v0.41.0** - Commands may differ in other versions.
+
+For token-sensitive inspection commands, prefer the compact commands in `references/TEMPLATES.md` over jj's default output.
 
 <!--
 Attribution and inspiration sources:
@@ -149,6 +151,8 @@ jj show <change-id>
 jj diff
 ```
 
+If you need to run `jj log`, `jj show`, or `jj diff` as an agent, use the matching compact command from `references/TEMPLATES.md` unless the full default output is explicitly needed.
+
 ### Moving Between Commits
 
 ```bash
@@ -190,6 +194,8 @@ jj bookmark list
 jj bookmark delete my-feature
 ```
 
+If you need to run `jj bookmark list`, use the matching compact command from `references/TEMPLATES.md`.
+
 <!--
 Multi-agent workspace framing inspired by onevcat/skills@onevcat-jj.
 The .workspaces/ project-local convention codified in references/WORKSPACES.md
@@ -205,6 +211,8 @@ jj workspace add .workspaces/<repo>-<purpose>   # Create
 jj workspace list                                # List
 jj workspace forget <name>                       # Untrack (files stay on disk)
 ```
+
+If you need to run `jj workspace list`, use the matching compact command from `references/TEMPLATES.md`.
 
 See `references/WORKSPACES.md` for the full convention: the `.workspaces/` directory layout, `.gitignore` safety check, naming, environment bootstrapping, and merging results from multiple workspaces back together.
 
@@ -253,6 +261,8 @@ jj op log                # See all operations
 jj op restore <op-id>    # Jump back to any past state
 jj evolog -r <change>    # See how a specific change evolved
 ```
+
+If you need to run `jj op log` or `jj evolog`, use the matching compact commands from `references/TEMPLATES.md` first. Add `-p` only after you have narrowed the scope.
 
 **Always reach for `jj undo` first** when something looks wrong — it's always correct and safe. See `references/RECOVERY.md` for recovery patterns by scenario (bad squash, accidental abandon, lost work, etc.).
 

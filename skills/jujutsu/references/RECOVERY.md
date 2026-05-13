@@ -22,6 +22,8 @@ jj op log -n 20                    # Limit to 20
 jj op log -p                       # Include diffs of what each op changed
 ```
 
+If you are inspecting first and do not yet need full diffs, start with the compact `jj op log` command from `references/TEMPLATES.md`. Add `-p` only after you have narrowed the relevant op IDs.
+
 Each operation has an `op-id`. Use these to navigate further back than a single `jj undo`.
 
 ### 3. `jj op restore` — jump to any past state
@@ -41,6 +43,8 @@ jj evolog                          # Evolution of the current @
 jj evolog -r <change-id>           # Evolution of a specific change
 jj evolog -p                       # Include patches between versions
 ```
+
+If you are inspecting first and do not yet need patches, start with the compact `jj evolog` command from `references/TEMPLATES.md`. Add `-p` only after you have narrowed the relevant version.
 
 Useful when you want to recover an earlier *version* of a specific commit (e.g., "what did this commit look like before I squashed into it?").
 

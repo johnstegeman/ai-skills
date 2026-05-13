@@ -111,6 +111,8 @@ jj log
 #   tests@  (the parallel workspace)
 ```
 
+If you need to inspect workspace tips as an agent, start with the compact `jj log` command from `references/TEMPLATES.md`.
+
 ## Combining results when work is done
 
 When a workspace finishes its work, you usually want to bring its change back into the default workspace (or onto the main bookmark) and retire the workspace. **Always ask the user which strategy to use** — the right answer depends on context. Three strategies, with a decision table at the end.
@@ -181,6 +183,8 @@ jj workspace list                  # All attached workspaces
 jj workspace root                  # Show this workspace's root
 jj workspace forget <name>         # Stop tracking; files stay on disk
 ```
+
+If you need to run `jj workspace list`, use the compact command from `references/TEMPLATES.md`.
 
 After `jj workspace forget`, the workspace directory is just files — you can `rm -rf` it. The change still exists in repo history if it was committed.
 
