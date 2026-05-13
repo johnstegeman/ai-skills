@@ -5,7 +5,7 @@ allowed-tools: Bash(jj *)
 license: Apache-2.0
 metadata:
   author: johnstegeman
-version: "1.2"
+  version: "1.3"
 ---
 
 # Jujutsu (jj) Version Control System
@@ -15,6 +15,14 @@ This skill helps you work with Jujutsu, a Git-compatible VCS with mutable commit
 **Tested with jj v0.41.0** - Commands may differ in other versions.
 
 For token-sensitive inspection commands, prefer the compact commands in `references/TEMPLATES.md` over jj's default output.
+
+The compact commands in `references/TEMPLATES.md` intentionally use `jj --no-pager ...`.
+
+For revsets, filesets, and template syntax, see `references/QUERY_LANGUAGES.md`.
+
+For sibling or unrelated work that should start from `trunk()`, see `references/NONLINEAR.md`.
+
+For common surprises and easy mistakes, see `references/GOTCHAS.md`.
 
 <!--
 Attribution and inspiration sources:
@@ -38,6 +46,14 @@ Attribution and inspiration sources:
 - The "op log records every mutation; nothing is ever truly lost" framing in the
   Recovery section is adapted from trevors/dot-claude@jj-workflow
   (https://skills.sh/trevors/dot-claude/jj-workflow).
+
+- Query-language guidance, nonlinear-work patterns, and workspace handoff /
+  monitoring ideas were adapted from joshuadavidthomas/agent-skills `jj`
+  (https://github.com/joshuadavidthomas/agent-skills/tree/main/jj) and its
+  `workspaces.md`
+  (https://raw.githubusercontent.com/joshuadavidthomas/agent-skills/main/jj/workspaces.md),
+  while intentionally preserving this skill's local describe-first workflow and
+  `.workspaces/` / `workspaces/` directory priority.
 -->
 
 
@@ -131,6 +147,8 @@ jj st
 
 For the full starting-a-change workflow (when to reuse `@` vs `jj new`, anti-patterns, decision logic), see `references/NEW_CHANGE.md`.
 
+For unrelated or sibling work that should branch from `trunk()`, see `references/NONLINEAR.md`.
+
 ### Creating Atomic Commits
 
 Each commit should represent ONE logical change.
@@ -152,6 +170,8 @@ jj diff
 ```
 
 If you need to run `jj log`, `jj show`, or `jj diff` as an agent, use the matching compact command from `references/TEMPLATES.md` unless the full default output is explicitly needed.
+
+For the revsets, filesets, and template syntax behind those compact commands, see `references/QUERY_LANGUAGES.md`.
 
 ### Moving Between Commits
 
@@ -214,7 +234,7 @@ jj workspace forget <name>                       # Untrack (files stay on disk)
 
 If you need to run `jj workspace list`, use the matching compact command from `references/TEMPLATES.md`.
 
-See `references/WORKSPACES.md` for the full convention: the `.workspaces/` directory layout, `.gitignore` safety check, naming, environment bootstrapping, and merging results from multiple workspaces back together.
+See `references/WORKSPACES.md` for the full convention: the `.workspaces/` directory layout, `.gitignore` safety check, naming, environment bootstrapping, agent handoff, monitoring, stale-workspace recovery, and merging results from multiple workspaces back together.
 
 ## Working with tags
 
@@ -230,6 +250,8 @@ jj git init --colocate                  # Adopt an existing git repo
 ```
 
 See `references/COLOCATED.md` for the complete workflow: the mutation rule (`git` is forbidden for mutations, allowed read-only), the git-command allowlist, common gotchas, and switching modes when absolutely necessary.
+
+See `references/GOTCHAS.md` when the behavior feels surprising and you want the short list of jj-specific footguns before trying a git-style workaround.
 
 ### Pushing Changes
 
